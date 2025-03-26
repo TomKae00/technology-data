@@ -201,7 +201,7 @@ uncrtnty_lookup = {
     "biogas CC": "I:J",
     "biogas upgrading": "I:J",
     "electrolysis": "I:J",
-    "battery": "L,N",
+    "battery": "H,K",
     "direct air capture": "I:J",
     "cement capture": "I:J",
     "biomass CHP capture": "I:J",
@@ -252,6 +252,12 @@ cost_year_2020 = [
     "biochar pyrolysis",
     "biomethanation",
     "electrolysis small",
+    "central water pit storage",
+    "central water tank storage",
+    "decentral water tank storage",
+    "hydrogen storage underground",
+    "hydrogen storage tank type 1 including compressor",
+    "battery"
 ]
 
 cost_year_2019 = [
@@ -619,13 +625,13 @@ def get_data_DEA(
     """
 
     excel_file = get_sheet_location(tech_name, sheet_names_dict, input_data_dict)
+    if tech_name == 'battery':
+        print(tech_name)
     if excel_file == "Sheet not found" or excel_file == "Multiple sheets found":
         logger.info(f"excel file not found for technology: {tech_name}")
         return pd.DataFrame()
 
-    if tech_name == "battery":
-        usecols = "B:J"
-    elif tech_name in [
+    if tech_name in [
         "direct air capture",
         "cement capture",
         "biomass CHP capture",
@@ -661,6 +667,11 @@ def get_data_DEA(
         skiprows = [0]
     else:
         skiprows = [0, 1]
+
+    if tech_name == 'battery':
+        df_battery = pd.read_excel(excel_file, sheet_name = sheet_names_dict[tech_name])
+        print(df_battery.columns)
+        print(len(df_battery.columns))
 
     excel = pd.read_excel(
         excel_file,
@@ -715,6 +726,7 @@ def get_data_DEA(
 
     if 2020 not in excel.columns:
         selection = excel[excel.isin([2020])].dropna(how="all").index
+#            if 'PTES'
         excel.columns = excel.loc[selection].iloc[0, :].fillna("Technology", limit=1)
         excel.drop(selection, inplace=True)
 
@@ -808,6 +820,9 @@ def get_data_DEA(
         "Input capacity",
         "Output capacity",
         "Energy storage capacity",
+#        "Typical temperature difference in storage [hot/cold, K]"
+#        "Max. storage temperature, hot"
+#        "Storage temperature, discharged"
     ]
 
     df = pd.DataFrame()
@@ -2295,31 +2310,6 @@ def order_data(years: list, technology_dataframe: pd.DataFrame) -> pd.DataFrame:
     output_data_dataframe = pd.concat(
         [output_data_dataframe, power_ratio_tank], sort=True
     )
-
-
-    # add energy to power ratio for central water tank storage
-    power_ratio_tank = tech_data.loc[("central water tank storage", "Input capacity for one unit")].copy().squeeze()
-    storage_capacity_tank = tech_data.loc[("central water tank storage", "Energy storage capacity for one unit")].copy().squeeze()
-
-    power_ratio_tank[years] = storage_capacity_tank[years].div(power_ratio_tank[years])
-    power_ratio_tank["further description"] = "Ratio between energy storage and input capacity"
-    power_ratio_tank["unit"] = "h"
-    power_ratio_tank = power_ratio_tank.to_frame().T
-    power_ratio_tank.rename(index={"Input capacity for one unit": "energy to power ratio"},
-                            level=1, inplace=True)
-    data = pd.concat([data, power_ratio_tank], sort=True)
-
-    # add energy to power ratio for decentral water tank storage
-    power_ratio_tank = tech_data.loc[("decentral water tank storage", "Input capacity for one unit")].copy().squeeze()
-    storage_capacity_tank = tech_data.loc[("decentral water tank storage", "Energy storage capacity for one unit")].copy().squeeze()
-
-    power_ratio_tank[years] = storage_capacity_tank[years].div(power_ratio_tank[years])
-    power_ratio_tank["further description"] = "Ratio between energy storage and input capacity"
-    power_ratio_tank["unit"] = "h"
-    power_ratio_tank = power_ratio_tank.to_frame().T
-    power_ratio_tank.rename(index={"Input capacity for one unit": "energy to power ratio"},
-                            level=1, inplace=True)
-    data = pd.concat([data, power_ratio_tank], sort=True)
 
     # add energy to power ratio for water pit storage
     power_ratio_pit = (
