@@ -820,9 +820,9 @@ def get_data_DEA(
         "Input capacity",
         "Output capacity",
         "Energy storage capacity",
-#        "Typical temperature difference in storage [hot/cold, K]"
-#        "Max. storage temperature, hot"
-#        "Storage temperature, discharged"
+        "Typical temperature difference in storage [hot/cold, K]"
+        "Max. storage temperature, hot"
+        "Storage temperature, discharged"
     ]
 
     df = pd.DataFrame()
@@ -1010,6 +1010,7 @@ def get_data_DEA(
         tech_name in cost_year_2020
         and ("for_carbon_capture_transport_storage" not in excel_file)
         and ("renewable_fuels" not in excel_file)
+        and ("for_energy_storage" not in excel_file)
     ):
         for attr in ["investment", "Fixed O&M"]:
             to_drop = df[
