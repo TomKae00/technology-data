@@ -1045,7 +1045,7 @@ def add_desalination_data(cost_dataframe: pd.DataFrame) -> pd.DataFrame:
 
     salinity = snakemake.config["desalination"]["salinity"]
     cost_dataframe.loc[(tech_name, "electricity-input"), "value"] = (
-        0.0003 * salinity ** 2 + 0.0018 * salinity + 2.6043
+        0.0003 * salinity**2 + 0.0018 * salinity + 2.6043
     )
     cost_dataframe.loc[(tech_name, "electricity-input"), "unit"] = "kWh/m^3-H2O"
     cost_dataframe.loc[(tech_name, "electricity-input"), "source"] = (
@@ -1672,7 +1672,7 @@ def clean_up_units(
 
 
 def set_specify_assumptions(
-     years: list, technology_dataframe: pd.DataFrame
+    years: list, technology_dataframe: pd.DataFrame
 ) -> pd.DataFrame:
     """
     The function implements more specific investment and efficiency assumptions for the following technologies:
@@ -3160,7 +3160,7 @@ def energy_penalty(cost_dataframe: pd.DataFrame) -> pd.DataFrame:
             + cost_dataframe.loc[(boiler, "VOM"), "value"] * eta_steam / eta_main
         )
         cost_dataframe.loc[(tech_name, "VOM"), "source"] = (
-                "Combination of " + tech_name + " and " + boiler
+            "Combination of " + tech_name + " and " + boiler
         )
         cost_dataframe.loc[(tech_name, "VOM"), "further description"] = ""
 
@@ -4040,10 +4040,10 @@ if __name__ == "__main__":
 
         # add solar data from other source than DEA
         if any(
-                [
+            [
                 snakemake.config["solar_utility_from_vartiaien"],
                 snakemake.config["solar_rooftop_from_etip"],
-                ]
+            ]
         ):
             costs = add_solar_from_other(years_list, costs)
 
