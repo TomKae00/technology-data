@@ -90,7 +90,7 @@ dea_sheet_names = {
     "solar-utility": "22 Utility-scale PV",
     "solar-utility single-axis tracking": "22 Utility-scale PV tracker",
     "solar-rooftop residential": "22 Rooftop PV residential",
-    "solar-rooftop commercial": "22 Rooftop PV commercial",
+    "solar-rooftop commercial": "22 Rooftop PV commercial.&industrial",
     "OCGT": "52 OCGT - Natural gas",
     "CCGT": "05 Gas turb. CC, steam extract.",
     "oil": "50 Diesel engine farm",
@@ -107,7 +107,7 @@ dea_sheet_names = {
     "central geothermal heat source": "45.1.b Geothermal DH, 2000m, E",
     "central excess-heat-sourced heat pump": "40 Comp. hp, excess heat 10 MW",
     "central ground-sourced heat pump": "40 Absorption heat pump, DH",
-    "central resistive heater": "41 Electric Boilers",
+    "central resistive heater": "41 Electric boiler, large",
     "central gas boiler": "44 Natural Gas DH Only",
     "decentral gas boiler": "202 Natural gas boiler",
     "direct firing gas": "312.a Direct firing Natural Gas",
@@ -280,13 +280,6 @@ cost_year_2020 = [
     "central ground-sourced heat pump",
     "central resistive heater",
     "central gas boiler",
-    "decentral gas boiler",
-    "direct firing gas",
-    "direct firing gas CC",
-    "direct firing solid fuels",
-    "direct firing solid fuels CC",
-    "decentral ground-sourced heat pump",
-    "decentral air-sourced heat pump",
     "fuel cell",
     "waste CHP",
     "waste CHP CC",
@@ -1760,7 +1753,6 @@ def set_specify_assumptions(
     # for central resistive heater there are investment costs for small (1-5MW)
     # and large (>10 MW) generators, assume the costs for large generators
     to_drop = [
-        ("central resistive heater", "Nominal investment, 400/690 V; 1-5 MW"),
         ("decentral gas boiler", "Heat efficiency, annual average, net"),
     ]
 
@@ -1806,7 +1798,7 @@ def set_specify_assumptions(
 
     # drop PV module conversion efficiency
     technology_dataframe = technology_dataframe.drop(
-        "PV module conversion efficiency [p.u.]", level=1
+        "PV module conversion efficiency", level=1
     )
 
     # heat pump efficiencies are assumed the one's for existing building,
@@ -2093,6 +2085,7 @@ def order_data(years: list, technology_dataframe: pd.DataFrame) -> pd.DataFrame:
             & (
                 (df.unit == "%")
                 | (df.unit == "% total size")
+                | (df.unit == "") #nochmal schauen, ob dies später in % umgewnadelt werden muss
                 | (df.unit == "% of fuel input")
                 | (df.unit == "MWh_H2/MWh_e")
                 | (df.unit == "%-points of heat loss")
@@ -2134,6 +2127,8 @@ def order_data(years: list, technology_dataframe: pd.DataFrame) -> pd.DataFrame:
             clean_df[tech_name] = pd.concat([clean_df[tech_name], efficiency_h2])
 
         # check if electric and heat efficiencies are given
+        if tech_name == 'central solid biomass CHP CC':
+            print("stop")
         if any(["Electric" in ind for ind in efficiency.index]) and any(
             ["Heat" in ind for ind in efficiency.index]
         ):
