@@ -86,7 +86,7 @@ source_dict = {
 # [DEA-sheet-names]
 dea_sheet_names = {
     "onwind": "20 Onshore turbines",
-    "offwind": "21 Offshore turbines",
+    #"offwind": "21 Offshore Wind AC Fixed", # zuvor     "offwind": "21 Offshore turbines", # fragen wie damit umgehen, dass keine Daten für 2020 vorhanden sind
     "solar-utility": "22 Utility-scale PV",
     "solar-utility single-axis tracking": "22 Utility-scale PV tracker",
     "solar-rooftop residential": "22 Rooftop PV residential",
@@ -157,7 +157,7 @@ dea_sheet_names = {
 
 uncrtnty_lookup = {
     "onwind": "J:K",
-    "offwind": "J:K",
+    #"offwind": "J:K",
     "solar-utility": "J:K",
     "solar-utility single-axis tracking": "J:K",
     "solar-rooftop residential": "J:K",
@@ -259,6 +259,37 @@ cost_year_2020 = [
     "hydrogen storage tank type 1 including compressor",
     "battery",
     "gas storage",
+    "onwind",
+    "OCGT",
+    "CCGT",
+    "oil",
+    "biomass CHP",
+    "biomass EOP",
+    "biomass HOP",
+    "central coal CHP",
+    "central gas CHP",
+    "central gas CHP CC",
+    "central hydrogen CHP",
+    "central solid biomass CHP",
+    "central solid biomass CHP CC",
+    "central solid biomass CHP powerboost CC",
+    "solar",
+    "central air-sourced heat pump",
+    "central geothermal heat source",
+    "central excess-heat-sourced heat pump",
+    "central ground-sourced heat pump",
+    "central resistive heater",
+    "central gas boiler",
+    "decentral gas boiler",
+    "direct firing gas",
+    "direct firing gas CC",
+    "direct firing solid fuels",
+    "direct firing solid fuels CC",
+    "decentral ground-sourced heat pump",
+    "decentral air-sourced heat pump",
+    "fuel cell",
+    "waste CHP",
+    "waste CHP CC",
 ]
 
 manual_cost_year_assignments_2020 = [
@@ -700,10 +731,12 @@ def get_data_DEA(
     excel.index = excel.index.astype(str)
     excel.dropna(axis=0, how="all", inplace=True)
 
-    if 2020 not in excel.columns:
+    if 2020 not in excel.columns: #and excel_file is not '/Users/tomkaehler/Documents/Uni/SYSGF_code/technology-data/inputs/technology_data_for_el_and_dh.xlsx':
         selection = excel[excel.isin([2020])].dropna(how="all").index
         excel.columns = excel.loc[selection].iloc[0, :].fillna("Technology", limit=1)
         excel.drop(selection, inplace=True)
+    #if excel_file is '/Users/tomkaehler/Documents/Uni/SYSGF_code/technology-data/inputs/technology_data_for_el_and_dh.xlsx':
+
 
     uncertainty_columns = ["2050-optimist", "2050-pessimist"]
     if uncrtnty_lookup[tech_name]:
@@ -786,8 +819,6 @@ def get_data_DEA(
         "Methane Output",
         "CO2 Consumption",
         "Hydrogen Consumption",
-        " - of which is equipment excluding heat pump",
-        " - of which is heat pump including its installation",
         "Input capacity",
         "Output capacity",
         "Energy storage capacity",
@@ -799,9 +830,8 @@ def get_data_DEA(
     # this is not good at all but requires significant changes to `test_compile_cost_assumptions` otherwise
     if tech_name == "central geothermal heat source":
         parameters += [
-            " - of which is installation",
-            "Heat generation capacity for one unit (MW)",
-            "Heat generation from geothermal heat (MJ/s)",
+            "Generating capacity for one unit",
+            "Heat generation from geothermal ressource",
         ]
 
     df = pd.DataFrame()
@@ -844,7 +874,7 @@ def get_data_DEA(
     # Modify data loaded from DEA on a per-technology case
     if (tech_name == "offwind") and offwind_no_grid_costs_flag:
         df.loc["Nominal investment (*total) [MEUR/MW_e, 2020]"] -= excel.loc[
-            "Nominal investment (installation: grid connection) [M€/MW_e, 2020]"
+            "Nominal investment (export cables) [MEUR/MW_e]" # previously Nominal investment (installation: grid connection) [M€/MW_e, 2020]
         ]
 
     # Exclude indirect costs for centralised system with additional piping.
@@ -966,11 +996,11 @@ def get_data_DEA(
         # heat_source_costs [MEUR/MW_heat_source] = heat_source_costs [MEUR/MW_entire_system] * MW_entire_system / MW_heat_source
         df.loc["Nominal investment (MEUR per MW)"] = (
             (
-                df.loc[" - of which is equipment excluding heat pump"]
-                + df.loc[" - of which is installation"]
+                df.loc["Nominal investment (equipment) [MEUR/MW_h]"]
+                + df.loc["Nominal investment (heat pump, installation incl.) [MEUR/MW_h]"] # hier nochmal fragen, ob das so gewollt ist
             )
-            * df.loc["Heat generation capacity for one unit (MW)"]
-            / df.loc["Heat generation from geothermal heat (MJ/s)"]
+            * df.loc["Generating capacity for one unit [MW_h]"]
+            / df.loc["Heat generation from geothermal ressource [MW_h]"]
         )
 
     df_final = pd.DataFrame(index=df.index, columns=years)
@@ -993,6 +1023,7 @@ def get_data_DEA(
         and ("for_carbon_capture_transport_storage" not in excel_file)
         and ("renewable_fuels" not in excel_file)
         and ("for_energy_storage" not in excel_file)
+        #and ("for_el_and_dh" not in excel_file)
     ):
         for attr in ["investment", "Fixed O&M"]:
             to_drop = df[
@@ -1000,8 +1031,14 @@ def get_data_DEA(
             ].index
             df_final.drop(to_drop, inplace=True)
 
+        #df_final["unit"] = df_final.rename(
+        #    index=lambda x: x[x.rfind("[") + 1 : x.rfind("]")]
+        #).index.values
+        df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
+            r"\]", ")", regex=True
+        )
         df_final["unit"] = df_final.rename(
-            index=lambda x: x[x.rfind("[") + 1 : x.rfind("]")]
+            index=lambda x: x[x.rfind("(") + 1 : x.rfind(")")]
         ).index.values
     else:
         df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
@@ -1654,6 +1691,7 @@ def clean_up_units(
             "central air-sourced heat pump",
             "central gas boiler",
             "central resistive heater",
+            #"central geothermal " vllt muss dies hier noch rein für central geothermal
             "decentral air-sourced heat pump",
             "decentral gas boiler",
             "decentral ground-sourced heat pump",
