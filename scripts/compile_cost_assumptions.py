@@ -90,7 +90,7 @@ dea_sheet_names = {
     "solar-utility": "22 Utility-scale PV",
     "solar-utility single-axis tracking": "22 Utility-scale PV tracker",
     "solar-rooftop residential": "22 Rooftop PV residential",
-    "solar-rooftop commercial": "22 Rooftop PV commercial.&industrial",
+    "solar-rooftop commercial": "22 Rooftop PV comm.&industrial",
     "OCGT": "52 OCGT - Natural gas",
     "CCGT": "05 Gas turb. CC, steam extract.",
     "oil": "50 Diesel engine farm",
@@ -1017,6 +1017,8 @@ def get_data_DEA(
         and ("renewable_fuels" not in excel_file)
         and ("for_energy_storage" not in excel_file)
         #and ("for_el_and_dh" not in excel_file)
+        #and tech_name in ['onwind', 'solar-utility', 'solar-utility single-axis tracking', 'solar-rooftop residential',
+        #                  'solar-rooftop commercial', 'OCGT', 'CCGT', 'oil', 'biomass CHP']
     ):
         for attr in ["investment", "Fixed O&M"]:
             to_drop = df[
@@ -1031,7 +1033,7 @@ def get_data_DEA(
             r"\]", ")", regex=True
         )
         df_final["unit"] = df_final.rename(
-            index=lambda x: x[x.rfind("(") + 1 : x.rfind(")")]
+            index=lambda x: x[x.rfind("[") + 1 : x.rfind("]")]
         ).index.values
     else:
         df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
@@ -1912,6 +1914,8 @@ def order_data(years: list, technology_dataframe: pd.DataFrame) -> pd.DataFrame:
 
     clean_df = {}
     for tech_name in technology_dataframe.index.get_level_values(0).unique():
+        if "solar" in tech_name:
+            print("stop")
         clean_df[tech_name] = pd.DataFrame()
         switch = False
         df = technology_dataframe.loc[tech_name]
