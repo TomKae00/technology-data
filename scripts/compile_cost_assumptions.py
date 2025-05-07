@@ -1026,23 +1026,43 @@ def get_data_DEA(
             ].index
             df_final.drop(to_drop, inplace=True)
 
-        #df_final["unit"] = df_final.rename(
-        #    index=lambda x: x[x.rfind("[") + 1 : x.rfind("]")]
-        #).index.values
-        df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
-            r"\]", ")", regex=True
-        )
-        df_final["unit"] = df_final.rename(
-            index=lambda x: x[x.rfind("[") + 1 : x.rfind("]")]
-        ).index.values
-    else:
-        df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
-            r"\]", ")", regex=True
-        )
-        df_final["unit"] = df_final.rename(
-            index=lambda x: x[x.rfind("(") + 1 : x.rfind(")")]
-        ).index.values
-    df_final.index = df_final.index.str.replace(r" \(.*\)", "", regex=True)
+#        df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
+#            r"\]", ")", regex=True
+#        )
+#        df_final["unit"] = df_final.rename(
+#            index=lambda x: x[x.rfind("(") + 1 : x.rfind(")")]
+#        ).index.values
+#    else:
+#        df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
+#            r"\]", ")", regex=True
+#        )
+#        df_final["unit"] = df_final.rename(
+#            index=lambda x: x[x.rfind("(") + 1 : x.rfind(")")]
+#        ).index.values
+#    df_final.index = df_final.index.str.replace(r" \(.*\)", "", regex=True)
+
+    # normalize all bracket‐units [x] → (x)
+    df_final.index = (
+        df_final.index
+        .str.replace(r"\[", "(", regex=True)
+        .str.replace(r"\]", ")", regex=True)
+    )
+
+    # sort index once to avoid Pandas PerformanceWarnings on .loc
+    df_final.sort_index(inplace=True)
+
+    # extract the final “(unit)” if present, else blank
+    units = (
+        df_final
+        .index
+        .to_series()
+        .str.extract(r"\(([^()]*)\)$")[0]
+        .fillna("")
+    )
+    df_final["unit"] = units.values
+
+    # strip the trailing “ (unit)” from the index labels
+    df_final.index = df_final.index.str.replace(r"\s*\([^()]*\)$", "", regex=True)
 
     return df_final
 
