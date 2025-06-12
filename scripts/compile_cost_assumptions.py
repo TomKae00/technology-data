@@ -1016,9 +1016,6 @@ def get_data_DEA(
         and ("for_carbon_capture_transport_storage" not in excel_file)
         and ("renewable_fuels" not in excel_file)
         and ("for_energy_storage" not in excel_file)
-        #and ("for_el_and_dh" not in excel_file)
-        #and tech_name in ['onwind', 'solar-utility', 'solar-utility single-axis tracking', 'solar-rooftop residential',
-        #                  'solar-rooftop commercial', 'OCGT', 'CCGT', 'oil', 'biomass CHP']
     ):
         for attr in ["investment", "Fixed O&M"]:
             to_drop = df[
@@ -2011,6 +2008,10 @@ def order_data(years: list, technology_dataframe: pd.DataFrame) -> pd.DataFrame:
                     logger.info(
                         f"check FOM: {str(tech_name)} {str(df[df.index.str.contains('Fixed O&M')].unit)}",
                     )
+            if tech_name == "central water pit storage":
+                # For current data, the FOM values for central water pit storage are too high by a factor of 1000.
+                # See issue: https://github.com/PyPSA/technology-data/issues/203
+                fixed[years] /= 1000  # in €/MWhCapacity/year
             if len(fixed) == 1:
                 fixed["parameter"] = "fixed"
                 clean_df[tech_name] = pd.concat([clean_df[tech_name], fixed])
@@ -2752,7 +2753,7 @@ def add_manual_input(technology_dataframe: pd.DataFrame) -> pd.DataFrame:
             except ValueError:
                 row_series["currency_year"] = np.nan
             for col in ["unit", "source", "further description"]:
-                row_series[col] = "; and\n".join(queried_df[col].unique().astype(str))
+                row_series[col] = "; and ".join(queried_df[col].unique().astype(str))
             row_series = row_series.rename(
                 {"further_description": "further description"}
             )  # match column name between manual_input and original TD workflow

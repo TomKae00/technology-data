@@ -11,14 +11,27 @@ Release Notes
 Upcoming Release
 ================
 
-* Removed geothermal-sourced heat pumps and fixed previously underestimated costs for geothermal heat source. Recommendation: Use excess-heat-sourced heat pump data for geothermal-sourced heat pumps (only the heat pump part of the costs!) and consult the DEA technology catalogue.
-
-* Removed water-sourced heat pumps, as cost assumptions (based on higher uncertainty range in DEA tables) are a) likely overestimates and b) break pessimistic/optimistic scenarios. Recomendation: Use excess-heat-sourced heat pump data or see DEA data on seawater-sourced heat pumps.
-
 .. .. warning:: 
   
 ..   The features listed below are not released yet, but will be part of the next release! 
 ..   To use the features already you have to use the ``master`` branch.
+
+`v0.13.1 <https://github.com/PyPSA/technology-data/releases/tag/v0.13.1>`__ (11th June 2025)
+=======================================================================================
+
+* Fix US-specific DAC parameters and currency year (https://github.com/PyPSA/technology-data/pull/227)
+
+`v0.13.0 <https://github.com/PyPSA/technology-data/releases/tag/v0.13.0>`__ (11th June 2025)
+=======================================================================================
+
+* Add several H2 production technologies (generic cost assumptions), fix FOM values and rename of efficiency to electricity-input in US cost assumptions for US-specific electrolyzer costs (https://github.com/PyPSA/technology-data/pull/222)
+
+`v0.12.0 <https://github.com/PyPSA/technology-data/releases/tag/v0.12.0>`__ (19th May 2025)
+=======================================================================================
+
+* Removed geothermal-sourced heat pumps and fixed previously underestimated costs for geothermal heat source. Recommendation: Use excess-heat-sourced heat pump data for geothermal-sourced heat pumps (only the heat pump part of the costs!) and consult the DEA technology catalogue.
+
+* Removed water-sourced heat pumps, as cost assumptions (based on higher uncertainty range in DEA tables) are a) likely overestimates and b) break pessimistic/optimistic scenarios. Recomendation: Use excess-heat-sourced heat pump data or see DEA data on seawater-sourced heat pumps.
 
 * Updated DEA Energy Storage data file (technology_data_catalogue_for_energy_storage.xlsx) to the newest version 9 – costs are now given in 2020 currency year.
 
@@ -60,12 +73,18 @@ Upcoming Release
 
 * Updates ci.yaml such that it fails if the generated outputs are different than the ones committed (https://github.com/PyPSA/technology-data/pull/205)
 
+* Add BF-BOF and separate natural gas- and hydrogen-based steelmaking (The technology previously called `direct iron reduction furnace` becomes `hydrogen direct iron reduction`, and `natural gas direct iron reduction furnace` represent the conventional direct iron reduction process), cement and ethanol production technologies (https://github.com/PyPSA/technology-data/pull/211)
+
+* Add industrial plant CCS retrofit options (https://github.com/PyPSA/technology-data/pull/212)
+
 * Include further unit tests for compile_cost_assumptions.py (https://github.com/PyPSA/technology-data/pull/210)
+
+* Removed additional newlines in the output csv's, if multiple `further_description` are given and concatenated. Each row in the output csv's should now indicate exactly one technology (https://github.com/PyPSA/technology-data/pull/219)
 
 `v0.11.0 <https://github.com/PyPSA/technology-data/releases/tag/v0.11.0>`__ (24th January 2025)
 =======================================================================================
 
-* Country specific cost assumptions and added NREL/ATB data (https://github.com/PyPSA/technology-data/pull/160)
+* Country-specific cost assumptions and added NREL/ATB data (https://github.com/PyPSA/technology-data/pull/160)
 
 * Add missing currency_year for FOM (https://github.com/PyPSA/technology-data/pull/163)
 
