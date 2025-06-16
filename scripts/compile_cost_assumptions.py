@@ -724,12 +724,10 @@ def get_data_DEA(
     excel.index = excel.index.astype(str)
     excel.dropna(axis=0, how="all", inplace=True)
 
-    if 2020 not in excel.columns: #and excel_file is not '/Users/tomkaehler/Documents/Uni/SYSGF_code/technology-data/inputs/technology_data_for_el_and_dh.xlsx':
+    if 2020 not in excel.columns:
         selection = excel[excel.isin([2020])].dropna(how="all").index
         excel.columns = excel.loc[selection].iloc[0, :].fillna("Technology", limit=1)
         excel.drop(selection, inplace=True)
-    #if excel_file is '/Users/tomkaehler/Documents/Uni/SYSGF_code/technology-data/inputs/technology_data_for_el_and_dh.xlsx':
-
 
     uncertainty_columns = ["2050-optimist", "2050-pessimist"]
     if uncrtnty_lookup[tech_name]:
@@ -1023,43 +1021,44 @@ def get_data_DEA(
             ].index
             df_final.drop(to_drop, inplace=True)
 
-#        df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
-#            r"\]", ")", regex=True
-#        )
-#        df_final["unit"] = df_final.rename(
-#            index=lambda x: x[x.rfind("(") + 1 : x.rfind(")")]
-#        ).index.values
-#    else:
-#        df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
-#            r"\]", ")", regex=True
-#        )
-#        df_final["unit"] = df_final.rename(
-#            index=lambda x: x[x.rfind("(") + 1 : x.rfind(")")]
-#        ).index.values
-#    df_final.index = df_final.index.str.replace(r" \(.*\)", "", regex=True)
+        df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
+            r"\]", ")", regex=True
+        )
+        df_final["unit"] = df_final.rename(
+            index=lambda x: x[x.rfind("(") + 1 : x.rfind(")")]
+        ).index.values
+    else:
+        df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
+            r"\]", ")", regex=True
+        )
+        df_final["unit"] = df_final.rename(
+            index=lambda x: x[x.rfind("(") + 1 : x.rfind(")")]
+        ).index.values
+    df_final.index = df_final.index.str.replace(r" \(.*\)", "", regex=True)
 
     # normalize all bracket‐units [x] → (x)
-    df_final.index = (
-        df_final.index
-        .str.replace(r"\[", "(", regex=True)
-        .str.replace(r"\]", ")", regex=True)
-    )
+#    df_final.index = (
+#        df_final.index
+#        .str.replace(r"\[", "(", regex=True)
+#        .str.replace(r"\]", ")", regex=True)
+#    )
 
     # sort index once to avoid Pandas PerformanceWarnings on .loc
-    df_final.sort_index(inplace=True)
+#    df_final.sort_index(inplace=True)
 
     # extract the final “(unit)” if present, else blank
-    units = (
-        df_final
-        .index
-        .to_series()
-        .str.extract(r"\(([^()]*)\)$")[0]
-        .fillna("")
-    )
-    df_final["unit"] = units.values
+#    units = (
+#        df_final
+#        .index
+#        .to_series()
+#        .str.extract(r"\(([^()]*)\)$")[0]
+#        .fillna("")
+#    )
+#    df_final["unit"] = units.values
 
     # strip the trailing “ (unit)” from the index labels
-    df_final.index = df_final.index.str.replace(r"\s*\([^()]*\)$", "", regex=True)
+#    df_final.index = df_final.index.str.replace(r"\s*\([^()]*\)$", "", regex=True)
+    df_final.index = df_final.index.str.replace(r" \(.*\)", "", regex=True)
 
     return df_final
 
