@@ -1021,44 +1021,57 @@ def get_data_DEA(
             ].index
             df_final.drop(to_drop, inplace=True)
 
-        df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
-            r"\]", ")", regex=True
-        )
         df_final["unit"] = df_final.rename(
-            index=lambda x: x[x.rfind("(") + 1 : x.rfind(")")]
+            index=lambda x: x[x.rfind("[") + 1: x.rfind("]")]
         ).index.values
     else:
         df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
             r"\]", ")", regex=True
         )
         df_final["unit"] = df_final.rename(
-            index=lambda x: x[x.rfind("(") + 1 : x.rfind(")")]
+            index=lambda x: x[x.rfind("(") + 1: x.rfind(")")]
         ).index.values
-    df_final.index = df_final.index.str.replace(r" \(.*\)", "", regex=True)
 
-    # normalize all bracket‐units [x] → (x)
+        # replace missing efficiency units with per unit
+#        eff_mask = (df_final["unit"] == "") & df_final.index.str.contains(
+#            "efficiency",
+#            case=False,
+#        )
+#        df_final.loc[eff_mask, "unit"] = "p.u."
+    df_final["unit"] = (
+        df_final["unit"]
+        .replace("", np.nan)  # turn any empty strings into NaN
+        .fillna("%")  # fill both original NaNs and those from "" with "p.u."
+    )
+    df_final.index = df_final.index.str.replace(r" \(.*\)", "", regex=True)
+    df_final.index = df_final.index.str.replace(r" \[.*\]", "", regex=True)
+
+    #        df_final.index = (
+#            df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
+#                r"\]", ")", regex=True
+#            )
+#        )
+#        df_final["unit"] = (
+#            df_final.index.to_series()
+#            .str.extract(r"\(([^()]*)\)(?!.*\()", expand=False)
+#        )
+#    else:
+#        df_final.index = (
+#            df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
+#                r"\]", ")", regex=True
+#            )
+#        )
+#        df_final["unit"] = (
+#            df_final.index.to_series()
+#            .str.extract(r"\(([^()]*)\)(?!.*\()", expand=False)
+#        )
+#
 #    df_final.index = (
-#        df_final.index
-#        .str.replace(r"\[", "(", regex=True)
-#        .str.replace(r"\]", ")", regex=True)
+#        df_final.index.str.replace(
+#            r"\([^()]*\)(?!.*\()", "", regex=True
+#        ).str.strip()
 #    )
-
-    # sort index once to avoid Pandas PerformanceWarnings on .loc
-#    df_final.sort_index(inplace=True)
-
-    # extract the final “(unit)” if present, else blank
-#    units = (
-#        df_final
-#        .index
-#        .to_series()
-#        .str.extract(r"\(([^()]*)\)$")[0]
-#        .fillna("")
-#    )
-#    df_final["unit"] = units.values
-
-    # strip the trailing “ (unit)” from the index labels
-#    df_final.index = df_final.index.str.replace(r"\s*\([^()]*\)$", "", regex=True)
-    df_final.index = df_final.index.str.replace(r" \(.*\)", "", regex=True)
+#    df_final["unit"] = df_final["unit"].fillna("")
 
     return df_final
 
