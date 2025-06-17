@@ -2603,6 +2603,13 @@ def add_carbon_capture(
         updated technology data
     """
 
+    # Avoid pandas PerformanceWarning about indexing past lexsort depth by
+    # ensuring the incoming dataframes are sorted before any indexing
+    if not new_technology_dataframe.index.is_monotonic_increasing:
+        new_technology_dataframe = new_technology_dataframe.sort_index()
+    if not technology_dataframe.index.is_monotonic_increasing:
+        technology_dataframe = technology_dataframe.sort_index()
+
     for tech_name in ["cement capture", "biomass CHP capture"]:
         new_technology_dataframe.loc[(tech_name, "capture_rate"), years] = (
             technology_dataframe.loc[
@@ -2654,7 +2661,7 @@ def add_carbon_capture(
             sheet_names_dict[tech_name]
         )
 
-    return new_technology_dataframe
+    return new_technology_dataframe.sort_index()
 
 
 def rename_pypsa_old(cost_dataframe_pypsa: pd.DataFrame) -> pd.DataFrame:
@@ -4012,6 +4019,7 @@ if __name__ == "__main__":
     # concat into pd.Dataframe
     tech_data = pd.concat(d_by_tech).sort_index()
     # clean up units
+    print(tech_data.index._is_lexsorted())
     tech_data = clean_up_units(tech_data, years_list, source="dea")
 
     # (b) ------ specific assumptions for some technologies -----------------------
@@ -4025,6 +4033,7 @@ if __name__ == "__main__":
 
     # drop all rows which only contains zeros
     tech_data = tech_data.loc[(tech_data[years_list] != 0).sum(axis=1) != 0]
+    tech_data.sort_index()
 
     # (c) -----  get tech data in pypsa syntax -----------------------------------
     # make categories: investment, FOM, VOM, efficiency, c_b, c_v
@@ -4033,9 +4042,11 @@ if __name__ == "__main__":
     data = add_description(years_list, data, snakemake.config["offwind_no_gridcosts"])
     # convert efficiency from %-> per unit and investment from MW->kW to compare
     data = convert_units(years_list, data)
+    data.sort_index()
+
+
     # add carbon capture
     data = add_carbon_capture(years_list, dea_sheet_names, data, tech_data) # hier gibts probleme wegen index
-
     # adjust for inflation
     for x in data.index.get_level_values("technology"):
         if x in cost_year_2020 or x in manual_cost_year_assignments_2020:
