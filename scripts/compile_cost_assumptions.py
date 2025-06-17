@@ -833,7 +833,7 @@ def get_data_DEA(
             df = pd.concat([df, attr])
     df.index = df.index.str.replace("€", "EUR")
 
-    df = df.reindex(columns=[y for y in years if y in df.columns])
+    df = df.reindex(columns=df.columns[df.columns.isin(years)])
     df = df[~df.index.duplicated(keep="first")]
 
     # replace missing data
@@ -994,19 +994,16 @@ def get_data_DEA(
             / df.loc["Heat generation from geothermal ressource [MW_h]"]
         )
 
-    df = df.sort_index()
-
     df_final = pd.DataFrame(index=df.index, columns=years)
-    df_final.sort_index(inplace=True)
 
     # [RTD-interpolation-example]
-    for idx in df_final.index:
+    for index in df_final.index:
         values = np.interp(
-            x=np.array(years, dtype=float),
+            x=years,
             xp=df.columns.values.astype(float),
-            fp=df.loc[idx, :].values.astype(float),
+            fp=df.loc[index, :].values.astype(float),
         )
-        df_final.loc[idx, :] = values
+        df_final.loc[index, :] = values
 
     # if year-specific data is missing and not fixed by interpolation fill forward with same values
     df_final = df_final.ffill(axis=1)
@@ -1018,17 +1015,17 @@ def get_data_DEA(
         and ("renewable_fuels" not in excel_file)
         and ("for_energy_storage" not in excel_file)
     ):
-        for attr in ["investment", "Fixed O&M"]:
+        for attr in ["investment", "Fixed O&M", "Variable O&M"]:
             to_drop = df[
                 df.index.str.contains(attr) & ~df.index.str.contains(r"\(\*total\)")
             ].index
             df_final.drop(to_drop, inplace=True)
 
-        df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
-            r"\]", ")", regex=True
-        )
+#        df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
+#            r"\]", ")", regex=True
+#        )
         df_final["unit"] = df_final.rename(
-            index=lambda x: x[x.rfind("(") + 1: x.rfind(")")]
+            index=lambda x: x[x.rfind("[") + 1: x.rfind("]")]
         ).index.values
     else:
         df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
@@ -1044,6 +1041,7 @@ def get_data_DEA(
         .fillna("%")  # fill both original NaNs and those from "" with "p.u."
     )
     df_final.index = df_final.index.str.replace(r" \(.*\)", "", regex=True)
+    df_final.index = df_final.index.str.replace(r" \[.*\]", "", regex=True)
     df_final.sort_index(inplace=True)
 
     return df_final
@@ -1916,8 +1914,6 @@ def order_data(years: list, technology_dataframe: pd.DataFrame) -> pd.DataFrame:
 
     clean_df = {}
     for tech_name in technology_dataframe.index.get_level_values(0).unique():
-        if "solar" in tech_name:
-            print("stop")
         clean_df[tech_name] = pd.DataFrame()
         switch = False
         df = technology_dataframe.loc[tech_name]
@@ -2095,7 +2091,7 @@ def order_data(years: list, technology_dataframe: pd.DataFrame) -> pd.DataFrame:
             & (
                 (df.unit == "%")
                 | (df.unit == "% total size")
-                | (df.unit == "") #nochmal schauen, ob dies später in % umgewnadelt werden muss
+                #| (df.unit == "") #nochmal schauen, ob dies später in % umgewnadelt werden muss
                 | (df.unit == "% of fuel input")
                 | (df.unit == "MWh_H2/MWh_e")
                 | (df.unit == "%-points of heat loss")
@@ -2137,8 +2133,6 @@ def order_data(years: list, technology_dataframe: pd.DataFrame) -> pd.DataFrame:
             clean_df[tech_name] = pd.concat([clean_df[tech_name], efficiency_h2])
 
         # check if electric and heat efficiencies are given
-        if tech_name == 'central solid biomass CHP CC':
-            print("stop")
         if any(["Electric" in ind for ind in efficiency.index]) and any(
             ["Heat" in ind for ind in efficiency.index]
         ):
