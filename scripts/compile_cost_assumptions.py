@@ -833,7 +833,7 @@ def get_data_DEA(
             df = pd.concat([df, attr])
     df.index = df.index.str.replace("€", "EUR")
 
-    df = df.reindex(columns=df.columns[df.columns.isin(years)])
+    df = df.reindex(columns=[y for y in years if y in df.columns])
     df = df[~df.index.duplicated(keep="first")]
 
     # replace missing data
@@ -994,16 +994,19 @@ def get_data_DEA(
             / df.loc["Heat generation from geothermal ressource [MW_h]"]
         )
 
+    df = df.sort_index()
+
     df_final = pd.DataFrame(index=df.index, columns=years)
+    df_final.sort_index(inplace=True)
 
     # [RTD-interpolation-example]
-    for index in df_final.index:
+    for idx in df_final.index:
         values = np.interp(
-            x=years,
+            x=np.array(years, dtype=float),
             xp=df.columns.values.astype(float),
-            fp=df.loc[index, :].values.astype(float),
+            fp=df.loc[idx, :].values.astype(float),
         )
-        df_final.loc[index, :] = values
+        df_final.loc[idx, :] = values
 
     # if year-specific data is missing and not fixed by interpolation fill forward with same values
     df_final = df_final.ffill(axis=1)
@@ -1021,8 +1024,11 @@ def get_data_DEA(
             ].index
             df_final.drop(to_drop, inplace=True)
 
+        df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
+            r"\]", ")", regex=True
+        )
         df_final["unit"] = df_final.rename(
-            index=lambda x: x[x.rfind("[") + 1: x.rfind("]")]
+            index=lambda x: x[x.rfind("(") + 1: x.rfind(")")]
         ).index.values
     else:
         df_final.index = df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
@@ -1032,46 +1038,13 @@ def get_data_DEA(
             index=lambda x: x[x.rfind("(") + 1: x.rfind(")")]
         ).index.values
 
-        # replace missing efficiency units with per unit
-#        eff_mask = (df_final["unit"] == "") & df_final.index.str.contains(
-#            "efficiency",
-#            case=False,
-#        )
-#        df_final.loc[eff_mask, "unit"] = "p.u."
     df_final["unit"] = (
         df_final["unit"]
         .replace("", np.nan)  # turn any empty strings into NaN
         .fillna("%")  # fill both original NaNs and those from "" with "p.u."
     )
     df_final.index = df_final.index.str.replace(r" \(.*\)", "", regex=True)
-    df_final.index = df_final.index.str.replace(r" \[.*\]", "", regex=True)
-
-    #        df_final.index = (
-#            df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
-#                r"\]", ")", regex=True
-#            )
-#        )
-#        df_final["unit"] = (
-#            df_final.index.to_series()
-#            .str.extract(r"\(([^()]*)\)(?!.*\()", expand=False)
-#        )
-#    else:
-#        df_final.index = (
-#            df_final.index.str.replace(r"\[", "(", regex=True).str.replace(
-#                r"\]", ")", regex=True
-#            )
-#        )
-#        df_final["unit"] = (
-#            df_final.index.to_series()
-#            .str.extract(r"\(([^()]*)\)(?!.*\()", expand=False)
-#        )
-#
-#    df_final.index = (
-#        df_final.index.str.replace(
-#            r"\([^()]*\)(?!.*\()", "", regex=True
-#        ).str.strip()
-#    )
-#    df_final["unit"] = df_final["unit"].fillna("")
+    df_final.sort_index(inplace=True)
 
     return df_final
 
@@ -4067,7 +4040,7 @@ if __name__ == "__main__":
     # convert efficiency from %-> per unit and investment from MW->kW to compare
     data = convert_units(years_list, data)
     # add carbon capture
-    data = add_carbon_capture(years_list, dea_sheet_names, data, tech_data)
+    data = add_carbon_capture(years_list, dea_sheet_names, data, tech_data) # hier gibts probleme wegen index
 
     # adjust for inflation
     for x in data.index.get_level_values("technology"):
